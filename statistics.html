@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Statistics</title>
+		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="css/r_checkmark.css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/view_reports.css" />
+		<link rel="stylesheet" href="css/create_reports.css" />
+        <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" integrity="undefined" crossorigin="anonymous"> -->
+        <script src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.min.js"></script>
+
+
+
+	</head>
+	
+
+	<ul>
+		<li class = "liLeft"><a href="view_reports.html" id = "viewReportsPage">View Reports</a></li>
+		<li class = "liLeft"><a href="create_reports.html" id = "createReportsPage">Create Reports</a></li>
+
+		<li class = "liRight">
+			<button class="btn btn-sm" id = "logout" type="button" onclick="logout()" >
+				<span class="glyphicon glyphicon-log-out"></span>
+				LogOut
+			</button>
+		</li>
+	</ul>
+	<h1 id = "viewReportTitle" ></h1>
+
+	<body>
+			<h4 class = "pageTitle">Statistics</h4>
+            <div class= "container">
+               <canvas id="myChart"></canvas>
+            </div>
+            <div class= "container">
+                <canvas id="myChart2"></canvas>
+             </div>
+	</body>
+    <script>
+
+    </script>
+	<script>
+        //Generates charts using info from fetch requests
+        async function getAllReports(){
+			const response = await fetch(`http://localhost:5000/employee/reimbursement`);
+			const reports = await response.json();
+            let chart1labels = new Map();
+            let chart2labels = new Map();
+            let colorsList = []
+            let name;
+            for(let report of reports){
+                name = await getEmployee(report.submitterId)
+                let temp = chart1labels[name];
+                //Creating map of username and amount for chart 1
+                if(temp===undefined){
+                    chart1labels[name] = Number(report.amount);
+                }else{
+                    chart1labels[name] = Number(report.amount) + temp;
+                }
+
+                //Creating map of username and frequency of request for chart 2
+                temp = chart2labels[name];
+                if(temp===undefined){
+                    chart2labels[name] = 1;
+                }else{
+                    chart2labels[name] = 1 + temp;
+                }
+
+                //Generating the list of random colors the size of total reimbursements
+                //This is more than we need as number of reimbursement doesnt equal to users
+                colorsList.push(getRandomColor());
+            }
+            //chart1
+            let myChart = document.getElementById("myChart").getContext("2d");
+            myChart.canvas.parentNode.style.height = '850px';
+            myChart.canvas.parentNode.style.width = '850px';
+            myChart.canvas.parentNode.style.float = 'left';
+
+
+
+            const chart1data = {
+                labels: Object.keys(chart1labels),
+                datasets: [{
+                        label: 'Dataset 1',
+                        data: Object.values(chart1labels),
+                        backgroundColor: colorsList,
+                }]
+            };
+    
+            let massPopChart = new Chart(myChart, {
+                type: 'doughnut',
+                data: chart1data,
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Total Reimbursement requests per employee'
+                    },
+                    responsive: true,
+                },
+            });
+
+            //chart2
+            let myChart2 = document.getElementById("myChart2").getContext("2d");
+            myChart2.canvas.parentNode.style.height = '850px';
+            myChart2.canvas.parentNode.style.width = '850px';
+            myChart2.canvas.parentNode.style.float = 'right';
+
+
+            const chart2data = {
+                labels: Object.keys(chart2labels),
+                datasets: [{
+                        label: 'Dataset 1',
+                        data: Object.values(chart2labels),
+                        backgroundColor: colorsList,
+                }]
+            };
+            let massPopChart2 = new Chart(myChart2, {
+                type: 'doughnut',
+                data: chart2data,
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Request frequency per employee'
+                    },
+                    responsive: true,
+                },
+            });
+            
+		}
+
+        //return first and last name of submitter
+        async function getEmployee(e_id){
+            const response = await fetch(`http://localhost:5000/employee/id/${e_id}`);
+            const body = await response.json();
+            return `${body.username}`;
+        }
+
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+              color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+          }
+        
+		function logout(){
+			window.location.assign("file:///C:/Users/Bishwo%20Purkuti/PycharmProjects/ExpenseReimbursement/front_end/login.html");
+			return JSON.parse(localStorage.clear());	
+		}
+        getAllReports()
+	</script>
+</html>
